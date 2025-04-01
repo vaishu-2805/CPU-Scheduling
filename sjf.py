@@ -38,7 +38,7 @@ def calculateTurnaroundTime(burstTime, waitingTime):
 # Function to calculate average times
 def calculateAverageTimes(processes, arrivalTime, burstTime):
     # Sort processes by arrival time
-    zipped = sorted(zip(arrivalTime, burstTime, processes), key=lambda x: x[0])
+    zipped = sorted(zip(arrivalTime, burstTime, processes), key=lambda x: (x[1],x[0]))
     # arrivalTime, burstTime, processes = zip(*zipped)
     sorted_arrivalTime = [item[0] for item in zipped]
     sorted_burstTime = [item[1] for item in zipped]

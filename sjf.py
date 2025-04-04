@@ -2,12 +2,14 @@
 def sjf_non_preemptive(processes, arrivalTime, burstTime):
     n = len(processes)
     waitingTime = [0] * n
+    completionTime = [0] * n
     completed = [False] * n
     currentTime = 0
     completedCount = 0
+    execution_order = []
 
     while completedCount < n:
-        # Find the next process to execute
+        # Find the next process to execute (shortest burst time that has arrived)
         idx = -1
         minBurst = float('inf')
         for i in range(n):
@@ -15,69 +17,82 @@ def sjf_non_preemptive(processes, arrivalTime, burstTime):
                 minBurst = burstTime[i]
                 idx = i
 
-        if idx == -1:  # No process is ready, advance time
+        if idx == -1:  # No process ready, advance time
             currentTime += 1
             continue
 
-        # Execute the selected process
+        # Record execution for Gantt chart
+        execution_order.append((processes[idx], currentTime, currentTime + burstTime[idx]))
+
+        # Execute process
         waitingTime[idx] = currentTime - arrivalTime[idx]
         currentTime += burstTime[idx]
         completed[idx] = True
         completedCount += 1
+        completionTime[idx] = currentTime
 
-    return waitingTime
+    return waitingTime, execution_order
 
 # Function to calculate turnaround time
 def calculateTurnaroundTime(burstTime, waitingTime):
-    n = len(burstTime)
-    turnaroundTime = [0] * n
-    for i in range(n):
-        turnaroundTime[i] = burstTime[i] + waitingTime[i]
-    return turnaroundTime
+    return [burstTime[i] + waitingTime[i] for i in range(len(burstTime))]
 
-# Function to calculate average times
+# Function to print Gantt Chart
+def printGanttChart(execution_order):
+    print("\nGantt Chart:")
+    print(" ", end="")
+    for p, st, et in execution_order:
+        print("----", end="")
+    print()
+    
+    print("|", end="")
+    for p, st, et in execution_order:
+        print(f" {p} |", end="")
+    print()
+    
+    print(" ", end="")
+    for p, st, et in execution_order:
+        print("----", end="")
+    print()
+    
+    for p, st, et in execution_order:
+        print(f"{st:<4}", end="")
+    print(f"{execution_order[-1][2]}")
+
+# Function to calculate average times and display results
 def calculateAverageTimes(processes, arrivalTime, burstTime):
-    # Sort processes by arrival time
-    zipped = sorted(zip(arrivalTime, burstTime, processes), key=lambda x: (x[1],x[0]))
-    # arrivalTime, burstTime, processes = zip(*zipped)
-    sorted_arrivalTime = [item[0] for item in zipped]
-    sorted_burstTime = [item[1] for item in zipped]
-    sorted_processes = [item[2] for item in zipped]
+    waitingTime, execution_order = sjf_non_preemptive(processes, arrivalTime, burstTime)
+    turnaroundTime = calculateTurnaroundTime(burstTime, waitingTime)
 
-    waitingTime = sjf_non_preemptive(sorted_processes, sorted_arrivalTime, sorted_burstTime)
-    turnaroundTime = calculateTurnaroundTime(sorted_burstTime, waitingTime)
-
-    avgWaitingTime = sum(waitingTime) / len(sorted_processes)
-    avgTurnaroundTime = sum(turnaroundTime) / len(sorted_processes)
+    avgWaitingTime = sum(waitingTime) / len(processes)
+    avgTurnaroundTime = sum(turnaroundTime) / len(processes)
 
     print("\nProcess\tArrival Time\tBurst Time\tWaiting Time\tTurnaround Time")
     for i in range(len(processes)):
         print(f"{processes[i]}\t\t{arrivalTime[i]}\t\t{burstTime[i]}\t\t{waitingTime[i]}\t\t{turnaroundTime[i]}")
+
+    printGanttChart(execution_order)
 
     print(f"\nAverage Waiting Time: {avgWaitingTime:.2f}")
     print(f"Average Turnaround Time: {avgTurnaroundTime:.2f}")
 
 # Function to accept user input and display results
 def acceptDisplay():
-       # Accept number of processes
     n = int(input("Enter the number of processes: "))
     
-    # Accept process IDs
     processes = []
     for i in range(n):
         processes.append(input(f"Enter Process ID for process {i+1}: "))
     
-    # Accept arrival times
     arrivalTime = []
     for i in range(n):
         arrivalTime.append(int(input(f"Enter Arrival Time for process {processes[i]}: ")))
     
-    # Accept burst times
     burstTime = []
     for i in range(n):
         burstTime.append(int(input(f"Enter Burst Time for process {processes[i]}: ")))
     
-    print("\nFCFS Scheduling Algorithm with User Input:")
+    print("\nSJF Non-Preemptive Scheduling Algorithm with User Input:")
     calculateAverageTimes(processes, arrivalTime, burstTime)
 
 # Main function

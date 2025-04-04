@@ -9,72 +9,74 @@ def Fcfs(processes, arrivalTime, burstTime):
     waitingTime[0] = 0  # First process has no waiting time
 
     for i in range(1, n):
-        # Calculate the service time of the current process
         startTime[i] = max(startTime[i - 1] + burstTime[i - 1], arrivalTime[i])
-        # Calculate waiting time
         waitingTime[i] = startTime[i] - arrivalTime[i]
-    
-        # If waiting time is negative, set it to 0
         waitingTime[i] = max(waitingTime[i], 0)
-    
-    return waitingTime
+
+    return waitingTime, startTime
 
 # Function to calculate turnaround time
 def calculateTurnaroundTime(burstTime, waitingTime):
-    n = len(burstTime)
-    turnaroundTime = [0] * n
-    for i in range(n):
-        turnaroundTime[i] = burstTime[i] + waitingTime[i]
-    return turnaroundTime
+    return [bt + wt for bt, wt in zip(burstTime, waitingTime)]
 
-# Function to calculate average times
+# Function to generate Gantt chart
+def printGanttChart(processes, startTime, burstTime):
+    print("\nGantt Chart:")
+    print(" ", end="")
+    for i in range(len(processes)):
+        print("------", end="")
+    print()
+
+    print("|", end="")
+    for i in range(len(processes)):
+        print(f"  {processes[i]}  |", end="")
+    print()
+
+    print(" ", end="")
+    for i in range(len(processes)):
+        print("------", end="")
+    print()
+
+    time = startTime[0]
+    print(f"{time:>2}", end="   ")
+    for i in range(len(burstTime)):
+        time = startTime[i] + burstTime[i]
+        print(f"{time:>2}   ", end="")
+    print("\n")
+
+# Function to calculate and display everything
 def calculateAverageTimes(processes, arrivalTime, burstTime):
-    # Sort processes by arrival time
+    # Sort by arrival time
     zipped = sorted(zip(arrivalTime, burstTime, processes), key=lambda x: x[0])
-    # arrivalTime, burstTime, processes = zip(*zipped)
-    sorted_arrivalTime = [item[0] for item in zipped]
-    sorted_burstTime = [item[1] for item in zipped]
-    sorted_processes = [item[2] for item in zipped]
+    arrivalTime = [item[0] for item in zipped]
+    burstTime = [item[1] for item in zipped]
+    processes = [item[2] for item in zipped]
 
-    waitingTime = Fcfs(sorted_processes, sorted_arrivalTime, sorted_burstTime)
-    turnaroundTime = calculateTurnaroundTime(sorted_burstTime, waitingTime)
+    waitingTime, startTime = Fcfs(processes, arrivalTime, burstTime)
+    turnaroundTime = calculateTurnaroundTime(burstTime, waitingTime)
 
-    avgWaitingTime = sum(waitingTime) / len(sorted_processes)
-    avgTurnaroundTime = sum(turnaroundTime) / len(sorted_processes)
-    
-    print("\nProcess\tArrival Time\tBurst Time\tWaiting Time\tTurnaround Time")
-    for i in range(len(sorted_processes)):
-        print(f"{sorted_processes[i]}\t\t{sorted_arrivalTime[i]}\t\t{sorted_burstTime[i]}\t\t{waitingTime[i]}\t\t{turnaroundTime[i]}")
-    
-    print(f"\nAverage Waiting Time: {avgWaitingTime:.2f}")
+    avgWaitingTime = sum(waitingTime) / len(processes)
+    avgTurnaroundTime = sum(turnaroundTime) / len(processes)
+
+    print("\nProcess\tArrival\tBurst\tWaiting\tTurnaround")
+    for i in range(len(processes)):
+        print(f"{processes[i]}\t{arrivalTime[i]}\t{burstTime[i]}\t{waitingTime[i]}\t{turnaroundTime[i]}")
+
+    printGanttChart(processes, startTime, burstTime)
+
+    print(f"Average Waiting Time: {avgWaitingTime:.2f}")
     print(f"Average Turnaround Time: {avgTurnaroundTime:.2f}")
 
-
-
-
+# Function to accept and display data
 def acceptDisplay():
-        # Accept number of processes
     n = int(input("Enter the number of processes: "))
-    
-    # Accept process IDs
-    processes = []
-    for i in range(n):
-        processes.append(input(f"Enter Process ID for process {i+1}: "))
-    
-    # Accept arrival times
-    arrivalTime = []
-    for i in range(n):
-        arrivalTime.append(int(input(f"Enter Arrival Time for process {processes[i]}: ")))
-    
-    # Accept burst times
-    burstTime = []
-    for i in range(n):
-        burstTime.append(int(input(f"Enter Burst Time for process {processes[i]}: ")))
-    
-    print("\nFCFS Scheduling Algorithm with User Input:")
+    processes = [input(f"Enter Process ID for process {i+1}: ") for i in range(n)]
+    arrivalTime = [int(input(f"Enter Arrival Time for process {processes[i]}: ")) for i in range(n)]
+    burstTime = [int(input(f"Enter Burst Time for process {processes[i]}: ")) for i in range(n)]
+
+    print("\nFCFS Scheduling Algorithm Output:")
     calculateAverageTimes(processes, arrivalTime, burstTime)
 
 # Main function
 if __name__ == "__main__":
     acceptDisplay()
-

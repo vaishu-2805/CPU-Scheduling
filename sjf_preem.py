@@ -1,4 +1,3 @@
-# Function to calculate waiting time for SJF Preemptive (SRTF)
 def sjf_preemptive(processes, arrivalTime, burstTime):
     n = len(processes)
     remainingTime = burstTime[:]  # Copy burst time for remaining execution
@@ -6,12 +5,12 @@ def sjf_preemptive(processes, arrivalTime, burstTime):
     completed = [False] * n
     currentTime = 0
     completedCount = 0
-    processOrder = []  # Track execution order
-    lastExecuted = -1  # Track last executed process to avoid duplicate entries
-    startTime = [-1] * n  # Track first execution time for each process
+    execution_log = []  # To track (process, start_time, end_time)
+    lastProcess = None
+    startTime = [-1] * n
 
     while completedCount < n:
-        # Find process with shortest remaining time at current time
+        # Find the process with the shortest remaining time
         idx = -1
         minRemaining = float('inf')
         for i in range(n):
@@ -19,75 +18,76 @@ def sjf_preemptive(processes, arrivalTime, burstTime):
                 minRemaining = remainingTime[i]
                 idx = i
 
-        if idx == -1:  # No process is ready, advance time
+        if idx == -1:
             currentTime += 1
             continue
 
-        # Record start time for first execution of a process
+        # Start tracking execution
+        if lastProcess != idx:
+            execution_log.append([processes[idx], currentTime, currentTime + 1])
+        else:
+            execution_log[-1][2] += 1  # Extend end time
+
         if startTime[idx] == -1:
             startTime[idx] = currentTime
 
-        # Execute the selected process for 1 time unit
         remainingTime[idx] -= 1
-        if lastExecuted != processes[idx]:  # Track execution order
-            processOrder.append(processes[idx])
-        lastExecuted = processes[idx]
+        currentTime += 1
+        lastProcess = idx
 
-        if remainingTime[idx] == 0:  # Process is completed
+        if remainingTime[idx] == 0:
             completed[idx] = True
             completedCount += 1
-            waitingTime[idx] = (currentTime + 1) - arrivalTime[idx] - burstTime[idx]
+            waitingTime[idx] = (currentTime - arrivalTime[idx] - burstTime[idx])
 
-        currentTime += 1
+    return waitingTime, execution_log
 
-    return waitingTime, processOrder
-
-# Function to calculate turnaround time
 def calculateTurnaroundTime(burstTime, waitingTime):
-    n = len(burstTime)
-    turnaroundTime = [0] * n
-    for i in range(n):
-        turnaroundTime[i] = burstTime[i] + waitingTime[i]
-    return turnaroundTime
+    return [burstTime[i] + waitingTime[i] for i in range(len(burstTime))]
 
-# Function to calculate average times
+def printGanttChart(execution_log):
+    print("\nGantt Chart:")
+    print(" ", end="")
+    for p, st, et in execution_log:
+        print("----", end="")
+    print("\n|", end="")
+    for p, st, et in execution_log:
+        print(f" {p} |", end="")
+    print("\n ", end="")
+    for p, st, et in execution_log:
+        print("----", end="")
+    print()
+    for p, st, et in execution_log:
+        print(f"{st:<4}", end="")
+    print(f"{execution_log[-1][2]}")
+
 def calculateAverageTimes(processes, arrivalTime, burstTime):
-    # Sort processes by arrival time
-    zipped = sorted(zip(arrivalTime, burstTime, processes), key=lambda x: x[0])
-    sorted_arrivalTime = [item[0] for item in zipped]
-    sorted_burstTime = [item[1] for item in zipped]
-    sorted_processes = [item[2] for item in zipped]
+    waitingTime, execution_log = sjf_preemptive(processes, arrivalTime, burstTime)
+    turnaroundTime = calculateTurnaroundTime(burstTime, waitingTime)
 
-    waitingTime, processOrder = sjf_preemptive(sorted_processes, sorted_arrivalTime, sorted_burstTime)
-    turnaroundTime = calculateTurnaroundTime(sorted_burstTime, waitingTime)
-
-    avgWaitingTime = sum(waitingTime) / len(sorted_processes)
-    avgTurnaroundTime = sum(turnaroundTime) / len(sorted_processes)
+    avgWaitingTime = sum(waitingTime) / len(processes)
+    avgTurnaroundTime = sum(turnaroundTime) / len(processes)
 
     print("\nProcess\tArrival Time\tBurst Time\tWaiting Time\tTurnaround Time")
-    for i in range(len(sorted_processes)):  # Print in sorted order
-        print(f"{sorted_processes[i]}\t\t{sorted_arrivalTime[i]}\t\t{sorted_burstTime[i]}\t\t{waitingTime[i]}\t\t{turnaroundTime[i]}")
+    for i in range(len(processes)):
+        print(f"{processes[i]}\t\t{arrivalTime[i]}\t\t{burstTime[i]}\t\t{waitingTime[i]}\t\t{turnaroundTime[i]}")
+
+    printGanttChart(execution_log)
 
     print(f"\nAverage Waiting Time: {avgWaitingTime:.2f}")
     print(f"Average Turnaround Time: {avgTurnaroundTime:.2f}")
-    print(f"\nExecution Order: {' -> '.join(processOrder)}")  # Display execution order
 
-# Function to accept user input and display results
 def acceptDisplay():
-    # Accept number of processes
     n = int(input("Enter the number of processes: "))
 
-    # Accept process IDs
     processes = []
     for i in range(n):
         processes.append(input(f"Enter Process ID for process {i+1}: "))
 
-    # Accept arrival times
     arrivalTime = []
     for i in range(n):
         arrivalTime.append(int(input(f"Enter Arrival Time for process {processes[i]}: ")))
 
-    # Accept burst times
     burstTime = []
     for i in range(n):
         burstTime.append(int(input(f"Enter Burst Time for process {processes[i]}: ")))
